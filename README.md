@@ -18,8 +18,10 @@ fan-out is only ever noticed afterwards. This plugin is that gate.
   provider call into a JSONL ledger, so the forecast is auditable against what actually landed.
 - **Closed loop.** The ledger's reconciled/forecast ratio becomes a **calibration factor** applied
   to every later forecast (clamped to `0.25–4.0`, and ignored until at least 2 calls have been
-  reconciled). The gate sharpens with use instead of repeating one guess forever. Measured: an
-  uncalibrated `$2.00` forecast → factor `4.00` after two reconciled pairs → next forecast `$8.00`.
+  reconciled). The gate sharpens with use instead of repeating one guess forever. Measured by the
+  shipped harness, on a 4,000-char goal against a $0.14/1k route: `$0.2800` at factor `1.00`, still
+  `$0.2800` at one reconciled pair (the deadband), then `$1.1200` at factor `4.00` once two pairs
+  reconcile — the ratio was 6.00 and the clamp held it at 4.00.
 - **Deny *or downgrade*.** With `on_breach: downgrade` the gate does not stop at refusing: it walks
   `downgrade_ladder` and **takes the first admissible cheaper rung** whose own forecast fits the
   remaining headroom, recording the swap in the ledger and in the child's label. It refuses only
