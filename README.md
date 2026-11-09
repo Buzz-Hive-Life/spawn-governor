@@ -74,10 +74,16 @@ delegation:
     spawn_governor:
       envelope_usd: 2.50
       window: day            # day | session | total
-      on_breach: deny        # deny | warn
+      on_breach: deny        # deny | downgrade | warn
+      on_unpriced: deny      # deny | allow — an armed envelope never passes a spawn priced at 0
       estimate_chars_per_token: 4
       rates:
         deepseek/deepseek-v4.1-flash: 0.14
+      # optional: instead of refusing, take the first rung that fits the headroom
+      # on_breach: downgrade
+      # downgrade_ladder:
+      #   - {model: deepseek/deepseek-v4.1-flash}
+      #   - {model: <a-cheaper-route>}
       default_rate_per_1k: 0.0
 ```
 

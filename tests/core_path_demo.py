@@ -2,7 +2,11 @@
 """spawn-governor verification harness — the whole story through core's OWN pre-spawn path.
 
     python tests/core_path_demo.py
-    HERMES_HOME=/tmp/sg-demo python tests/core_path_demo.py   # ledger lands under $HERMES_HOME/logs
+    SPAWN_GOVERNOR_DEMO_HOME=/tmp/sg-demo python tests/core_path_demo.py   # ledger there; must be EMPTY
+
+It NEVER writes into ``HERMES_HOME``: on any box that points at the live profile, and a harness that
+stubbed the real ``config.yaml`` would be a footgun pointed at the shoot box. It uses a throwaway
+directory unless you name an empty one.
 
 WHY IT LIVES UNDER ``tests/``: it imports two Hermes internals on purpose — ``agent.delegation_registry``
 (to register the provider) and ``tools.delegate_tool_routes`` (``resolve_task_routes``, the exact
@@ -51,13 +55,26 @@ def main() -> int:
         print(f"spawn-governor needs Hermes >= 0.22.5 (delegation provider surface): {exc}")
         return 2
 
-    home = os.environ.get("HERMES_HOME") or tempfile.mkdtemp(prefix="spawn-governor-demo-")
-    os.environ["HERMES_HOME"] = home
-    Path(home).mkdir(parents=True, exist_ok=True)
-    ledger = Path(home) / "logs" / "spawn-governor-ledger.jsonl"
+    # NEVER touch the operator's real profile. On any box HERMES_HOME points at the LIVE profile, so
+    # honouring it here would overwrite the real config.yaml with the 6-line stub below and unlink the
+    # real ledger — mid-take, if this is being filmed. The harness gets a throwaway home unless the
+    # operator names an EMPTY one explicitly.
+    home = os.environ.get("SPAWN_GOVERNOR_DEMO_HOME") or tempfile.mkdtemp(prefix="spawn-governor-demo-")
+    home_path = Path(home)
+    home_path.mkdir(parents=True, exist_ok=True)
+    cfg_file = home_path / "config.yaml"
+    if cfg_file.exists():
+        print(
+            f"refusing: {cfg_file} already exists. Point SPAWN_GOVERNOR_DEMO_HOME at an EMPTY "
+            "directory — this harness writes a stub config and must never touch a real profile.",
+            file=sys.stderr,
+        )
+        return 2
+    os.environ["HERMES_HOME"] = home  # only now, and only at the throwaway home
+    ledger = home_path / "logs" / "spawn-governor-ledger.jsonl"
     ledger.unlink(missing_ok=True)
     # the reconciliation hook reads its own settings from config.yaml, so give it one
-    (Path(home) / "config.yaml").write_text(
+    cfg_file.write_text(
         "delegation:\n  backend: spawn_governor\n  backends:\n    spawn_governor:\n"
         f"      rates:\n        big: 0.14\n        cheap: 0.001\n", encoding="utf-8")
 
