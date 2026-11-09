@@ -2,11 +2,12 @@
 """spawn-governor verification harness — the whole story through core's OWN pre-spawn path.
 
     python tests/core_path_demo.py
-    SPAWN_GOVERNOR_DEMO_HOME=/tmp/sg-demo python tests/core_path_demo.py   # ledger there; must be EMPTY
+    SPAWN_GOVERNOR_DEMO_HOME=/tmp/sg-demo python tests/core_path_demo.py
 
 It NEVER writes into ``HERMES_HOME``: on any box that points at the live profile, and a harness that
-stubbed the real ``config.yaml`` would be a footgun pointed at the shoot box. It uses a throwaway
-directory unless you name an empty one.
+stubbed the real ``config.yaml`` would be a footgun pointed at the shoot box. It writes into a throwaway
+directory unless you name one — and it refuses a named directory that already holds a ``config.yaml``
+(exactly what it checks, not a stricter promise).
 
 WHY IT LIVES UNDER ``tests/``: it imports two Hermes internals on purpose — ``agent.delegation_registry``
 (to register the provider) and ``tools.delegate_tool_routes`` (``resolve_task_routes``, the exact
