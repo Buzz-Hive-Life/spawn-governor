@@ -31,7 +31,13 @@ fan-out is only ever noticed afterwards. This plugin is that gate.
 
 ## Measured, not claimed
 
-`hermes plugins validate` → **12/12 checks OK, 0 warnings, isolation `host`**.
+`hermes plugins validate` → **15/15 checks OK, 0 warnings, isolation `host`** (re-run at this pinned
+tree; run it yourself — it is the same gate catalogue CI runs).
+
+The verification harness is `tests/core_path_demo.py` — run it against a Hermes checkout and it prints
+the whole story (arm · refusal · downgrade · loop · honesty stamp). It imports two core internals on
+purpose so it can drive core's *own* resolution rather than a private harness; it is a development
+script and never runs inside Hermes, and it lives under `tests/` for exactly that reason.
 
 **Proven through core's own pre-spawn path** (`tools/delegate_tool_routes.resolve_task_routes`, the
 function `delegate_task` calls at `tools/delegate_tool.py:511` — not a private harness):

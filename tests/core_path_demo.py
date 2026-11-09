@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-"""spawn-governor demo — the whole story through core's OWN pre-spawn path.
+"""spawn-governor verification harness — the whole story through core's OWN pre-spawn path.
 
-Run it inside a Hermes checkout (the venv that owns `hermes`):
+    python tests/core_path_demo.py
+    HERMES_HOME=/tmp/sg-demo python tests/core_path_demo.py   # ledger lands under $HERMES_HOME/logs
 
-    python demo/run_demo.py            # or: hermes-plugin-spawn-governor/demo/run_demo.py
-    HERMES_HOME=/tmp/sg-demo python demo/run_demo.py     # ledger lands under $HERMES_HOME/logs
+WHY IT LIVES UNDER ``tests/``: it imports two Hermes internals on purpose — ``agent.delegation_registry``
+(to register the provider) and ``tools.delegate_tool_routes`` (``resolve_task_routes``, the exact
+function ``delegate_task`` calls at ``tools/delegate_tool.py:511``). That is the point: the refusal and
+the downgrade below are core's resolution, not a private harness. It is a development harness and
+never runs inside Hermes, which is the same reason the catalogue validator skips ``tests/`` when it
+lints for private imports. The plugin's own runtime imports only ``agent.delegation_provider`` — a
+documented public surface.
 
-This drives `tools.delegate_tool_routes.resolve_task_routes` — the exact function `delegate_task`
-calls at `tools/delegate_tool.py:511` — so what you see is core's resolution, not a private harness.
 Requires Hermes >= 0.22.5 (the delegation-provider surface).
 """
 from __future__ import annotations

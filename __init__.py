@@ -26,11 +26,21 @@ KNOBS
     delegation.backends.spawn_governor.rates                {model: usd_per_1k_blended}
     delegation.backends.spawn_governor.default_rate_per_1k  fallback when the model is unlisted
     delegation.backends.spawn_governor.estimate_chars_per_token   forecast divisor (default 4)
-    delegation.backends.spawn_governor.on_breach            deny | warn
+    delegation.backends.spawn_governor.output_token_factor  reply tokens as a multiple of the forecast
+    delegation.backends.spawn_governor.on_unpriced          deny (default) | allow — an armed
+                                                            envelope must never pass a spawn priced at 0
+    delegation.backends.spawn_governor.on_breach            deny | downgrade | warn
 
 LEDGER
-    $HERMES_HOME/logs/spawn-governor-ledger.jsonl — one line per reservation and per reconciled
-    provider call: ``{"kind": "reservation"|"actual", "usd": ..., "model": ..., "ts": ...}``
+    $HERMES_HOME/logs/spawn-governor-ledger.jsonl — one line per decision and per reconciled provider
+    call. ``kind`` is one of:
+        reservation       a spawn admitted at its forecast price
+        actual            reconciled: what the provider reported, priced from the rate table
+        actual_unpriced   reconciled with tokens but no resolvable rate — recorded, never silently dropped
+        refused           not admitted: ``reason`` ∈ task_ceiling | envelope | ladder_exhausted | unpriced
+        overrun_allowed   on_breach: warn — allowed past the envelope, recorded as an overrun
+        downgraded        on_breach: downgrade — admitted on a cheaper rung; carries primary_forecast
+                          and downgraded_to
 """
 from __future__ import annotations
 
