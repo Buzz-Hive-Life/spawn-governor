@@ -1,0 +1,49 @@
+manifest_version: 2
+name: spawn-governor
+version: 0.1.0
+description: "Admission control for delegation spend. Prices each delegate_task spawn from its goal/context against a rate table and refuses it BEFORE it starts when it would breach the envelope you set — a hard stop in front of the spawn, plus a post-run ledger that reconciles the forecast against the real usage Hermes reports. Official delegation backends pick the route; community meters tally after the fact; neither refuses the spawn."
+author: "cyber-bee (Hive Life Haven)"
+license: MIT
+kind: backend
+requires_hermes: ">=0.22.5"
+provides_hooks:
+  - post_api_request
+config_schema:
+  envelope_usd:
+    type: float
+    default: 0.0
+    description: "Spend ceiling for the current window. 0 disables the gate (observe-only)."
+  window:
+    type: str
+    default: "day"
+    description: "Envelope window: day | session | total."
+  default_rate_per_1k:
+    type: float
+    default: 0.0
+    description: "Fallback blended USD per 1k tokens when the model is absent from the rate table."
+  estimate_chars_per_token:
+    type: float
+    default: 4.0
+    description: "Chars-per-token divisor used to forecast input tokens from goal + context."
+  output_token_factor:
+    type: float
+    default: 1.0
+    description: "Expected reply tokens as a multiple of the input forecast. 1.0 = replies are about as long as the ask."
+  rates:
+    type: dict
+    description: "Per-model blended USD per 1k tokens: {model: rate}. Unlisted models fall back to default_rate_per_1k."
+  on_unpriced:
+    type: str
+    default: "deny"
+    description: "With an envelope armed and no price resolvable for the route: deny (refuse as a config error — never allow a spawn on a zero price) or allow (price it at zero deliberately)."
+  on_breach:
+    type: str
+    default: "deny"
+    description: "deny (refuse the spawn) | downgrade (take the first admissible cheaper rung of downgrade_ladder; refuse only if none fits) | warn (allow and record an overrun)."
+  downgrade_ladder:
+    type: list
+    description: "Ordered fallback routes, best first, each {model, provider?}. On breach the first rung whose own forecast fits the remaining headroom is used instead of refusing, and the swap is recorded in the ledger and the child's label. Rungs with no resolvable rate are skipped."
+tags:
+  - delegation
+  - cost
+  - governance
